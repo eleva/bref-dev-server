@@ -56,7 +56,7 @@ class Router
             if (isset($event['http'])) { //Search for API Gateway v1 syntax
                 $pattern = $event['http'];
                 break;
-            } elseif (isset($event['httpApi'])) { //Or for API Gateway v1 syntax
+            } elseif (isset($event['httpApi'])) { //Or for API Gateway v2 syntax
                 $pattern = $event['httpApi'];
                 break;
             }
