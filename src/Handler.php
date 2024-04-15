@@ -44,7 +44,8 @@ class Handler
         $request = $this->requestFromGlobals();
         [$handler, $request] = $router->match($request);
         $controller = $handler ? $container->get($handler) : new NotFound;
-        $response = $controller->handle($request);
+        $context = $request->getAttribute('lambda-event')?->getRequestContext();
+        $response = $controller->handle($request,$context);
         (new ResponseEmitter)->emit($response);
 
         return null;
