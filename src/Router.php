@@ -4,6 +4,7 @@ namespace Bref\DevServer;
 
 use Psr\Http\Message\ServerRequestInterface;
 
+use Symfony\Component\Yaml\Yaml;
 use function is_array;
 
 /**
@@ -16,8 +17,10 @@ class Router
     public static function fromServerlessConfig(array $serverlessConfig): self
     {
         $routes = [];
-        foreach ($serverlessConfig['functions'] as $function) {
-            $pattern = $function['events'][0]['httpApi'] ?? null;
+        foreach ($serverlessConfig['functions'] as $functionConfig) {
+
+            $function = self::checkIfFunctionIsIncludedBySeparateFile($functionConfig);
+            $pattern = self::getPatternByEvents($function['events']);
 
             if (! $pattern) {
                 continue;
@@ -31,6 +34,34 @@ class Router
         }
 
         return new self($routes);
+    }
+
+    public static function checkIfFunctionIsIncludedBySeparateFile($functionConfig, $function = null)
+    {
+        //Check if function is included by separate file with ${file(./my/function/path)} syntax
+        if (str_contains($functionConfig, '${file')) {
+            $init = strpos($functionConfig, "(") + 1; //path is always after an open parenthesis
+            $end = strpos($functionConfig, ")"); //path is always closed by a closed parenthesis
+            $functionFilePath = substr($functionConfig, $init, $end - $init); //get file path
+            $functionAttributes = Yaml::parseFile($functionFilePath, Yaml::PARSE_CUSTOM_TAGS); //parse function file yaml
+            $function = reset($functionAttributes); //first element of the attributes array has the name of the function
+        }
+        return $function;
+    }
+
+    public static function getPatternByEvents($events, $pattern = null)
+    {
+        //Cycle events as they could be multiple
+        foreach ($events as $event) {
+            if (isset($event['http'])) { //Search for API Gateway v1 syntax
+                $pattern = $event['http'];
+                break;
+            } elseif (isset($event['httpApi'])) { //Or for API Gateway v1 syntax
+                $pattern = $event['httpApi'];
+                break;
+            }
+        }
+        return $pattern;
     }
 
     private static function patternToString(array $pattern): string
