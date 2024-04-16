@@ -61,6 +61,7 @@ class Router
                 return $event['httpApi'];
             }
         }
+        return null;
     }
 
     private static function patternToString(array $pattern): string
@@ -144,7 +145,7 @@ class Router
         }
 
         $pathRegex = $this->patternToRegex($pathPattern);
-        preg_match($pathRegex, $requestPath, $matches);
+        preg_match($pathRegex, ltrim($requestPath, '/'), $matches);
         foreach ($matches as $name => $value) {
             $request = $request->withAttribute($name, $value);
         }
