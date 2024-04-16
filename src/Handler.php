@@ -4,6 +4,7 @@ namespace Bref\DevServer;
 
 use Bref\Bref;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Response;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
@@ -46,6 +47,9 @@ class Handler
         $controller = $handler ? $container->get($handler) : new NotFound;
         $context = $request->getAttribute('lambda-event')?->getRequestContext();
         $response = $controller->handle($request, $context);
+        if (is_array($response)) {
+            $response = new Response(200, [], $response['body']);
+        }
         (new ResponseEmitter)->emit($response);
 
         return null;
